@@ -8,6 +8,10 @@ Works in singleplayer and multiplayer.
 Clone the source code to your PC, build in **X86-Release**.
 **You will need vcpkg !**
 
+# How to use
+After compiling the code yourself (or after downloading it from Releases), inject all DLLs at once.
+If for some reason it does not work, then inject every other dlls before injecting the ac_bhop one.
+
 # Vcpkg packages
 - glm
 - minhook
