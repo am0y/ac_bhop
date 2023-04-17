@@ -27,5 +27,5 @@ Code is not correctly organised like I wanted to in the first place but it wasnt
 I'll work on that later (again, if I have time)
 
 # Credits
-https://adrianb.io/2015/02/14/bunnyhop.html -- An article explaining how Source movements works. Physics code comes from here.
-https://github.com/assaultcube/AC
+- https://adrianb.io/2015/02/14/bunnyhop.html -- An article explaining how Source movements works. Physics code comes from here.
+- https://github.com/assaultcube/AC
