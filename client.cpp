@@ -58,13 +58,13 @@ public:
 	}
 };
 
-static float air_acceleration = 0.0075f;
-static float ground_acceleration = 0.01f;
+constexpr float ground_friction = 0.f; // can't be used atm
 
-static float ground_friction = 0.f;
+constexpr float max_ground_vel = 1.f;
+constexpr float max_air_vel = 1.0f;
 
-static float max_ground_vel = 1.f;
-static float max_air_vel = 10.f;
+constexpr float air_acceleration = 100.f * max_air_vel;
+constexpr float ground_acceleration = 7.f * max_ground_vel;
 
 static states_t states( {
 	{ "Auto-hopping", VK_F5, false },
@@ -125,20 +125,10 @@ ac::vec3_t mov_accelerate( ac::vec3_t accelDir, ac::vec3_t prevVelocity, float a
 	glm::vec3 prev_vel( prevVelocity.x, prevVelocity.y, prevVelocity.z );
 	glm::vec3 accel_dir( accelDir.x, accelDir.y, accelDir.z );	
 		
-	float projVel = glm::dot( prev_vel, accel_dir );
-	float accelVel = accelerate * dt; 
+	float curr_speed = glm::dot( prev_vel, accel_dir );
+	float add_speed = glm::clamp( max_velocity - curr_speed, 0.f, max_velocity * dt );
 
-	if ( (projVel + accelVel) > max_velocity )
-		accelVel = max_velocity - projVel;
-
-	//std::cout << "prev_vel: " << std::defaultfloat << prev_vel.x << ", " << prev_vel.y << ", " << prev_vel.z << "\n";
-	//std::cout << "accel_dir: " << std::defaultfloat << accel_dir.x << ", " << accel_dir.y << ", " << accel_dir.z << "\n";
-	//std::cout << std::defaultfloat << "projVel: " << projVel << "\n";
-	//std::cout << std::defaultfloat << "accelVel: " << accelVel << "\n";
-	//std::cout << std::defaultfloat << "dt: " << dt << "\n";
-	//std::cout << "----------------------------\n";
-
-	const auto res = prev_vel + accel_dir * accelVel;
+	const auto res = prev_vel + add_speed * accel_dir;
 	return ac::vec3_t( res.x, res.y, res.z );
 }
 
@@ -147,14 +137,14 @@ ac::vec3_t mov_ground( ac::vec3_t accelDir, ac::vec3_t prevVelocity, float dt )
 	glm::vec3 prev_vel( prevVelocity.x, prevVelocity.y, prevVelocity.z );
 	glm::vec3 accel_dir( accelDir.x, accelDir.y, accelDir.z );
 
-	float speed = prev_vel.length();
-	if ( speed != 0 )
+	float speed = glm::length( prev_vel );
+	if ( speed > 0.f )
 	{
 		float drop = speed * ground_friction * dt;
 		accel_dir *= fmaxf( speed - drop, 0 ) / speed;
 	}
 
-	return mov_accelerate( accelDir, prevVelocity, ground_acceleration, max_ground_vel, dt );
+	return mov_accelerate( { accel_dir.x, accel_dir.y, accel_dir.z }, { prev_vel.x, prev_vel.y, prev_vel.z }, ground_acceleration, max_ground_vel, dt );
 }
 
 ac::vec3_t mov_air( ac::vec3_t accelDir, ac::vec3_t prevVelocity, float dt )
@@ -205,8 +195,12 @@ void on_inputcheck( ) {
 	accel_dir.x = std::fmaxf( std::fminf( accel_dir.x, 1.f ), -1.f );
 	accel_dir.y = std::fmaxf( std::fminf( accel_dir.y, 1.f ), -1.f );
 
-	auto acceleration_func = localplayer->onfloor ? mov_ground : mov_air;
+	auto acceleration_func = (localplayer->onfloor || localplayer->onladder) ? mov_ground : mov_air;
 	localplayer->vel = acceleration_func( accel_dir, prev_vel, frameDt );
+	if ( localplayer->onladder ) {
+		float ladder_speed = glm::length( glm::vec3{ localplayer->vel.x, localplayer->vel.y, localplayer->vel.z } );
+		localplayer->vel = { 0, 0, std::fminf( ladder_speed, max_ground_vel ) };
+	}
 
 	// We're done!!
 	begin_t = t;
