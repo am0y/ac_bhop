@@ -21,4 +21,18 @@ namespace ac::memory {
 		*reinterpret_cast< T* >( addr ) = value;
 		VirtualProtect( reinterpret_cast< void* >( addr ), sizeof( T ), op, &op );
 	}
+	
+	inline void write( const std::uintptr_t addr, const void* value, const std::size_t size ) {
+		DWORD op;
+		VirtualProtect( reinterpret_cast< void* >( addr ), size, PAGE_EXECUTE_READWRITE, &op );
+		std::memcpy( reinterpret_cast< void* >( addr ), value, size );
+		VirtualProtect( reinterpret_cast< void* >( addr ), size, op, &op );
+	}
+	
+	inline void read( const std::uintptr_t addr, void* value, const std::size_t size ) {
+		DWORD op;
+		VirtualProtect( reinterpret_cast< void* >( addr ), size, PAGE_EXECUTE_READWRITE, &op );
+		std::memcpy( value, reinterpret_cast< void* >( addr ), size );
+		VirtualProtect( reinterpret_cast< void* >( addr ), size, op, &op );
+	}
 }
